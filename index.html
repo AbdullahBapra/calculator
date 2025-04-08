@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cash Register</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f4f4f4;
+      text-align: center;
+    }
+    #app {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      padding: 0.5rem;
+      font-size: 1rem;
+      width: 200px;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    #change-due {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h2>Cash Register</h2>
+    <input id="cash" type="number" placeholder="Enter cash received" />
+    <br />
+    <button id="purchase-btn">Purchase</button>
+    <p id="change-due"></p>
+  </div>
+
+  <script>
+    const cashInput = document.getElementById("cash");
+    const purchaseBtn = document.getElementById("purchase-btn");
+    const changeDue = document.getElementById("change-due");
+
+    const price = 19.5; // You can modify this as needed
+
+    let cid = [
+      ["PENNY", 1.01],
+      ["NICKEL", 2.05],
+      ["DIME", 3.1],
+      ["QUARTER", 4.25],
+      ["ONE", 90],
+      ["FIVE", 55],
+      ["TEN", 20],
+      ["TWENTY", 60],
+      ["ONE HUNDRED", 100]
+    ];
+
+    const currencyUnit = {
+      "PENNY": 0.01,
+      "NICKEL": 0.05,
+      "DIME": 0.1,
+      "QUARTER": 0.25,
+      "ONE": 1,
+      "FIVE": 5,
+      "TEN": 10,
+      "TWENTY": 20,
+      "ONE HUNDRED": 100
+    };
+
+    const checkChange = (price, cash, cid) => {
+      let change = parseFloat((cash - price).toFixed(2));
+      let totalCID = parseFloat(cid.reduce((sum, [_, val]) => sum + val, 0).toFixed(2));
+
+      if (change > totalCID) return { status: "INSUFFICIENT_FUNDS", change: [] };
+      if (change === totalCID) {
+        return {
+          status: "CLOSED",
+          change: cid.filter(([_, val]) => val > 0)
+        };
+      }
+
+      let changeArray = [];
+      const reversedCid = [...cid].reverse();
+
+      for (let [unit, amount] of reversedCid) {
+        let unitValue = currencyUnit[unit];
+        let toReturn = 0;
+
+        while (change >= unitValue && amount > 0) {
+          change = parseFloat((change - unitValue).toFixed(2));
+          amount = parseFloat((amount - unitValue).toFixed(2));
+          toReturn = parseFloat((toReturn + unitValue).toFixed(2));
+        }
+
+        if (toReturn > 0) changeArray.push([unit, toReturn]);
+      }
+
+      if (change > 0) return { status: "INSUFFICIENT_FUNDS", change: [] };
+
+      return { status: "OPEN", change: changeArray };
+    };
+
+    purchaseBtn.addEventListener("click", () => {
+      const cash = parseFloat(cashInput.value);
+
+      if (isNaN(cash)) {
+        alert("Please enter a valid number");
+        return;
+      }
+
+      if (cash < price) {
+        alert("Customer does not have enough money to purchase the item");
+        return;
+      }
+
+      if (cash === price) {
+        changeDue.textContent = "No change due - customer paid with exact cash";
+        return;
+      }
+
+      const result = checkChange(price, cash, cid);
+
+      if (result.status === "INSUFFICIENT_FUNDS") {
+        changeDue.textContent = "Status: INSUFFICIENT_FUNDS";
+      } else {
+        let message = `Status: ${result.status}`;
+        result.change.forEach(([unit, val]) => {
+          message += ` ${unit}: $${val}`;
+        });
+        changeDue.textContent = message;
+      }
+    });
+  </script>
+</body>
+</html>
